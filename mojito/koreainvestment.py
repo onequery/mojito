@@ -1328,7 +1328,7 @@ class KoreaInvestment:
            "authorization": self.access_token,
            "appKey": self.api_key,
            "appSecret": self.api_secret,
-           "tr_id": "TTTC8036R",
+           "tr_id": "VTTC8036R" if self.mock else "TTTC8036R",
            "tr_cont": "" if fk100 == "" else "N"
         }
 
@@ -1343,7 +1343,7 @@ class KoreaInvestment:
 
         resp = requests.get(url, headers=headers, params=params)
         data = resp.json()
-        data['tr_cont'] = resp.headers['tr_cont']
+        data['tr_cont'] = resp.headers.get('tr_cont', '')
         return data
 
     def create_oversea_order(self, side: str, symbol: str, price: int,
