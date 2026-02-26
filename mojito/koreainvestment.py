@@ -901,7 +901,7 @@ class KoreaInvestment:
 
         res = requests.get(url, headers=headers, params=params)
         data = res.json()
-        data['tr_cont'] = res.headers['tr_cont']
+        data['tr_cont'] = res.headers.get('tr_cont', '')
         return data
 
     def fetch_balance(self) -> dict:
@@ -979,7 +979,7 @@ class KoreaInvestment:
 
         res = requests.get(url, headers=headers, params=params)
         data = res.json()
-        data['tr_cont'] = res.headers['tr_cont']
+        data['tr_cont'] = res.headers.get('tr_cont', '')
         return data
 
     def fetch_present_balance(self, foreign_currency: bool=True) -> dict:
@@ -1096,7 +1096,7 @@ class KoreaInvestment:
 
         res = requests.get(url, headers=headers, params=params)
         data = res.json()
-        data['tr_cont'] = res.headers['tr_cont']
+        data['tr_cont'] = res.headers.get('tr_cont', '')
         return data
 
     def fetch_oversea_day_night(self):
