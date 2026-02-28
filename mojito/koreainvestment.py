@@ -36,7 +36,7 @@ EXCHANGE_CODE = {
 # 해외주식 잔고
 EXCHANGE_CODE2 = {
     "미국전체": "NASD",
-    "나스닥": "NAS",
+    "나스닥": "NASD",
     "뉴욕": "NYSE",
     "아멕스": "AMEX",
     "홍콩": "SEHK",
@@ -74,6 +74,7 @@ EXCHANGE_CODE4 = {
 }
 
 CURRENCY_CODE = {
+    "미국전체": "USD",
     "나스닥": "USD",
     "뉴욕": "USD",
     "아멕스": "USD",
@@ -913,36 +914,80 @@ class KoreaInvestment:
             dict: response data
         """
         if self.exchange == '서울':
-            output = {}
+            output = {'output1': [], 'output2': []}
 
             data = self.fetch_balance_domestic()
-            output['output1'] = data['output1']
-            output['output2'] = data['output2']
+            if isinstance(data, dict):
+                output['rt_cd'] = data.get('rt_cd', '')
+                output['msg_cd'] = data.get('msg_cd', '')
+                output['msg1'] = data.get('msg1', '')
+                first_out1 = data.get('output1', [])
+                first_out2 = data.get('output2', [])
+                if isinstance(first_out1, list):
+                    output['output1'].extend(first_out1)
+                elif isinstance(first_out1, dict):
+                    output['output1'].append(first_out1)
+                if isinstance(first_out2, list):
+                    output['output2'].extend(first_out2)
+                elif isinstance(first_out2, dict):
+                    output['output2'].append(first_out2)
 
-            while data['tr_cont'] == 'M':
-                fk100 = data['ctx_area_fk100']
-                nk100 = data['ctx_area_nk100']
+            while str(data.get('tr_cont', '')).strip().upper() == 'M' if isinstance(data, dict) else False:
+                fk100 = str(data.get('ctx_area_fk100', ''))
+                nk100 = str(data.get('ctx_area_nk100', ''))
 
                 data = self.fetch_balance_domestic(fk100, nk100)
-                output['output1'].extend(data['output1'])
-                output['output2'].extend(data['output2'])
+                if not isinstance(data, dict):
+                    break
+                page_out1 = data.get('output1', [])
+                page_out2 = data.get('output2', [])
+                if isinstance(page_out1, list):
+                    output['output1'].extend(page_out1)
+                elif isinstance(page_out1, dict):
+                    output['output1'].append(page_out1)
+                if isinstance(page_out2, list):
+                    output['output2'].extend(page_out2)
+                elif isinstance(page_out2, dict):
+                    output['output2'].append(page_out2)
 
             return output
         else:
             # 해외주식 잔고
-            output = {}
+            output = {'output1': [], 'output2': []}
 
             data = self.fetch_balance_oversea()
-            output['output1'] = data['output1']
-            output['output2'] = data['output2']
+            if isinstance(data, dict):
+                output['rt_cd'] = data.get('rt_cd', '')
+                output['msg_cd'] = data.get('msg_cd', '')
+                output['msg1'] = data.get('msg1', '')
+                first_out1 = data.get('output1', [])
+                first_out2 = data.get('output2', [])
+                if isinstance(first_out1, list):
+                    output['output1'].extend(first_out1)
+                elif isinstance(first_out1, dict):
+                    output['output1'].append(first_out1)
+                if isinstance(first_out2, list):
+                    output['output2'].extend(first_out2)
+                elif isinstance(first_out2, dict):
+                    output['output2'].append(first_out2)
 
-            while data['tr_cont'] == 'M':
-                fk200 = data['ctx_area_fk200']
-                nk200 = data['ctx_area_nk200']
+            while str(data.get('tr_cont', '')).strip().upper() == 'M' if isinstance(data, dict) else False:
+                fk200 = str(data.get('ctx_area_fk200', ''))
+                nk200 = str(data.get('ctx_area_nk200', ''))
 
                 data = self.fetch_balance_oversea(fk200, nk200)
-                output['output1'].extend(data['output1'])
-                output['output2'].extend(data['output2'])
+                if not isinstance(data, dict):
+                    break
+                page_out1 = data.get('output1', [])
+                page_out2 = data.get('output2', [])
+                if isinstance(page_out1, list):
+                    output['output1'].extend(page_out1)
+                elif isinstance(page_out1, dict):
+                    output['output1'].append(page_out1)
+                if isinstance(page_out2, list):
+                    output['output2'].extend(page_out2)
+                elif isinstance(page_out2, dict):
+                    output['output2'].append(page_out2)
 
             return output
 
@@ -1003,7 +1048,7 @@ class KoreaInvestment:
 
         # query parameter
         nation_code = "000"
-        if self.exchange in ["나스닥", "뉴욕", "아멕스"]:
+        if self.exchange in ["미국전체", "나스닥", "뉴욕", "아멕스"]:
             nation_code = "840"
         elif self.exchange == "홍콩":
             nation_code = "344"
@@ -1020,7 +1065,9 @@ class KoreaInvestment:
         if nation_code == "000":
             market_code = "00"
         elif nation_code == "840":
-            if self.exchange == "나스닥":
+            if self.exchange == "미국전체":
+                market_code = "00"
+            elif self.exchange == "나스닥":
                 market_code = "01"
             elif self.exchange == "뉴욕":
                 market_code = "02"
@@ -1064,8 +1111,16 @@ class KoreaInvestment:
 
 
         # 주야간원장 구분 호출
+        # Some environments (especially mock) can return payloads without `output`.
+        # Never crash on KeyError; fall back to regular-day tr_id ("N") when unknown.
         resp = self.fetch_oversea_day_night()
-        psbl = resp['output']['PSBL_YN']
+        psbl = "N"
+        if isinstance(resp, dict):
+            output = resp.get("output", {})
+            if isinstance(output, dict):
+                val = str(output.get("PSBL_YN", "") or "").strip().upper()
+                if val in {"Y", "N"}:
+                    psbl = val
 
         if self.mock:
             tr_id = "VTTS3012R" if psbl == 'N' else 'VTTT3012R'
@@ -1106,16 +1161,27 @@ class KoreaInvestment:
         url = f"{self.base_url}/{path}"
 
         # request/header
-        headers = {
-           "content-type": "application/json",
-           "authorization": self.access_token,
-           "appKey": self.api_key,
-           "appSecret": self.api_secret,
-           "tr_id": "JTTT3010R"
-        }
-
-        res = requests.get(url, headers=headers)
-        return res.json()
+        # Mock env may require V* tr_id while real env uses J*.
+        tr_ids = ["VTTT3010R", "JTTT3010R"] if self.mock else ["JTTT3010R"]
+        last_payload = {}
+        for tr_id in tr_ids:
+            headers = {
+               "content-type": "application/json",
+               "authorization": self.access_token,
+               "appKey": self.api_key,
+               "appSecret": self.api_secret,
+               "tr_id": tr_id
+            }
+            try:
+                res = requests.get(url, headers=headers)
+                payload = res.json()
+            except Exception:
+                continue
+            last_payload = payload if isinstance(payload, dict) else {}
+            output = last_payload.get("output", {}) if isinstance(last_payload, dict) else {}
+            if isinstance(output, dict) and str(output.get("PSBL_YN", "")).strip().upper() in {"Y", "N"}:
+                return last_payload
+        return last_payload
 
     def create_order(self, side: str, symbol: str, price: int,
                      quantity: int, order_type: str) -> dict:
