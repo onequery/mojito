@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import pickle
+import time
 import zipfile
 from base64 import b64decode
 from multiprocessing import Process, Queue
@@ -1121,6 +1122,18 @@ class KoreaInvestment:
                 val = str(output.get("PSBL_YN", "") or "").strip().upper()
                 if val in {"Y", "N"}:
                     psbl = val
+
+        # Do not cache day/night state locally; always re-query from server.
+        # Instead, enforce a small gap before the follow-up balance inquiry
+        # to reduce bursty request patterns under gateway rate limits.
+        spacing_sec = 0.0
+        try:
+            spacing_sec = float(os.getenv("AGENT_LAB_US_DAYORNIGHT_CALL_SPACING_SEC", "0.4") or 0.4)
+        except Exception:
+            spacing_sec = 0.4
+        spacing_sec = max(0.0, min(10.0, spacing_sec))
+        if spacing_sec > 0:
+            time.sleep(spacing_sec)
 
         if self.mock:
             tr_id = "VTTS3012R" if psbl == 'N' else 'VTTT3012R'
