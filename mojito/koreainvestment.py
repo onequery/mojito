@@ -1128,7 +1128,13 @@ class KoreaInvestment:
         # to reduce bursty request patterns under gateway rate limits.
         spacing_sec = 0.0
         try:
-            spacing_sec = float(os.getenv("AGENT_LAB_US_DAYORNIGHT_CALL_SPACING_SEC", "0.4") or 0.4)
+            spacing_sec = float(
+                os.getenv(
+                    "TRADER_US_DAYORNIGHT_CALL_SPACING_SEC",
+                    os.getenv("AGENT_LAB_US_DAYORNIGHT_CALL_SPACING_SEC", "0.4"),
+                )
+                or 0.4
+            )
         except Exception:
             spacing_sec = 0.4
         spacing_sec = max(0.0, min(10.0, spacing_sec))
