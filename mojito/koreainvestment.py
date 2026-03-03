@@ -19,6 +19,14 @@ import websockets
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
+
+def _http_timeout_sec() -> float:
+    try:
+        return max(1.0, float(os.getenv("KIS_HTTP_TIMEOUT_SEC", "10") or 10.0))
+    except Exception:
+        return 10.0
+
+
 EXCHANGE_CODE = {
     "홍콩": "HKS",
     "뉴욕": "NYS",
@@ -500,7 +508,7 @@ class KoreaInvestment:
             "fid_cond_mrkt_div_code": market_code,
             "fid_input_iscd": symbol
         }
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=_http_timeout_sec())
         return resp.json()
 
     def fetch_oversea_price(self, symbol: str) -> dict:
@@ -529,7 +537,7 @@ class KoreaInvestment:
             "EXCD": exchange_code,
             "SYMB": symbol
         }
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=_http_timeout_sec())
         return resp.json()
 
     def fetch_today_1m_ohlcv(self, symbol: str, to: str=""):
@@ -1561,7 +1569,7 @@ class KoreaInvestment:
             "FID_PERIOD_DIV_CODE": timeframe,
             "FID_ORG_ADJ_PRC": 0 if adj_price else 1
         }
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=_http_timeout_sec())
         return resp.json()
 
     def fetch_ohlcv_oversea(self, symbol: str, timeframe:str='D',
@@ -1605,7 +1613,7 @@ class KoreaInvestment:
             "BYMD": end_day,
             "MODP": 1 if adj_price else 0
         }
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=_http_timeout_sec())
         return resp.json()
 
     def fetch_price_detail_oversea(self, symbol: str):
@@ -1632,7 +1640,7 @@ class KoreaInvestment:
             "EXCD": exchange_code,
             "SYMB": symbol,
         }
-        resp = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params, timeout=_http_timeout_sec())
         return resp.json()
 
 
